@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Family Tree – Send your family details</title>
+<style>
+  :root{--navy:#12163A;--card:#1D2147;--gold:#FFC93C;--pink:#FF5C9E;--text:#fff;--dim:#B8BBD0;--line:#2E3466;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);
+    background:radial-gradient(1200px 600px at 20% -10%,#2a2f6b 0%,transparent 60%),linear-gradient(180deg,#0E1230,#12163A 40%,#261F4D);min-height:100vh}
+  .wrap{max-width:640px;margin:0 auto;padding:20px 16px 120px}
+  h1{font-size:28px;font-weight:900;letter-spacing:1px;color:var(--gold);text-shadow:2px 2px 0 var(--pink);margin:8px 0 4px;text-transform:uppercase}
+  .sub{color:var(--dim);margin:0 0 18px;line-height:1.45}
+  .card{background:rgba(29,33,71,.85);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+  .card h2{font-size:15px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:0 0 12px}
+  label{display:block;font-size:13px;color:var(--dim);margin:10px 0 4px}
+  input[type=text],input[type=date],select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0E1230;color:var(--text);font-size:16px}
+  input:focus,select:focus{outline:2px solid var(--gold);border-color:transparent}
+  .row{display:flex;gap:10px}.row>div{flex:1}
+  .check{display:flex;align-items:center;gap:8px;margin-top:10px;color:var(--text)}
+  .check input{width:20px;height:20px}
+  .photo{display:flex;align-items:center;gap:12px;margin-top:10px}
+  .photo img{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);display:none}
+  .btn{display:inline-block;border:0;border-radius:12px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer}
+  .btn.add{background:transparent;color:var(--gold);border:1.5px dashed var(--gold);width:100%;margin-top:6px}
+  .btn.rm{background:transparent;color:var(--pink);padding:6px 0;font-size:13px}
+  .btn.photo-btn{background:#2A2F63;color:#fff;font-size:14px}
+  .item{border-top:1px solid var(--line);padding-top:10px;margin-top:12px}
+  .send{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(0deg,#0E1230 70%,transparent)}
+  .send .btn{width:100%;max-width:640px;display:block;margin:0 auto;background:var(--gold);color:var(--navy);font-size:17px;padding:16px;box-shadow:4px 4px 0 var(--pink)}
+  .note{font-size:12.5px;color:var(--dim);line-height:1.5}
+  .done{display:none;text-align:center;padding:30px 10px}
+  .done h2{color:var(--gold)}
+  a{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap" id="form">
+  <h1 id="title">Family Tree</h1>
+  <p class="sub">Please fill in your family's details. Nothing is saved on the internet: when you tap <b>Send</b>, a small file is made on your phone for you to send back on WhatsApp.</p>
+
+  <div class="card">
+    <h2>About you</h2>
+    <label>Your full name *</label><input type="text" id="me_name" autocomplete="name">
+    <div class="row">
+      <div><label>Gender</label><select id="me_gender"><option value="">-</option><option value="M">Male</option><option value="F">Female</option></select></div>
+      <div><label>Date of birth</label><input type="date" id="me_birth"></div>
+    </div>
+    <label>Lives in (town / city)</label><input type="text" id="me_place" list="places" placeholder="e.g. Kozhikode or Dubai">
+    <div class="row">
+      <div><label>Mobile (with country code)</label><input type="text" id="me_phone" inputmode="tel" placeholder="+971 50 123 4567"></div>
+      <div><label>Blood group</label><select id="me_blood"><option value="">Don't know</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
+    </div>
+    <div class="photo"><img id="me_img"><button class="btn photo-btn" type="button" onclick="pickPhoto('me')">Add photo</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Your parents</h2>
+    <label>Father's full name</label><input type="text" id="father_name">
+    <div class="check"><input type="checkbox" id="father_passed"><span>Father has passed away</span></div>
+    <label>Mother's full name</label><input type="text" id="mother_name">
+    <div class="check"><input type="checkbox" id="mother_passed"><span>Mother has passed away</span></div>
+    <p class="note">Write the names exactly as the family knows them, so you are connected to the right people.</p>
+  </div>
+
+  <div class="card">
+    <h2>Husband / Wife</h2>
+    <div id="spouses"></div>
+    <button class="btn add" type="button" onclick="addSpouse()">+ Add husband / wife</button>
+  </div>
+
+  <div class="card">
+    <h2>Children</h2>
+    <div id="children"></div>
+    <button class="btn add" type="button" onclick="addChild()">+ Add a child</button>
+  </div>
+
+  <div class="card">
+    <p class="note">Concept by MUHAMMED YASEEN · Created by MUHAMMED JURAIJ</p>
+  </div>
+</div>
+
+<div class="wrap done" id="done">
+  <h2>One last step - not sent yet!</h2>
+  <p class="sub">Your details are saved in a small file. Tap the green button, choose <b>WhatsApp</b>, and send the file to the person who asked you.</p>
+  <button class="btn" type="button" style="background:#25D366;color:#fff;width:100%;padding:16px;font-size:18px" onclick="sendFile()">Send the file</button>
+  <p class="note" id="copynote"></p>
+  <p class="note">File name: <b id="fname"></b></p>
+<p><a href="#" onclick="location.reload();return false">Fill in another family</a></p>
+</div>
+
+<div class="send" id="sendbar"><button class="btn" type="button" onclick="send()">Send my family details</button></div>
+
+<datalist id="places"></datalist>
+<input type="file" id="filepick" accept="image/*" style="display:none">
+
+<script>
+const PREFILL = /*PREFILL*/null/*END*/;
+const PLACES = [{"n":"Thiruvananthapuram, Kerala, India","a":8.52,"o":76.94},{"n":"Kollam, Kerala, India","a":8.89,"o":76.61},{"n":"Pathanamthitta, Kerala, India","a":9.26,"o":76.79},{"n":"Alappuzha, Kerala, India","a":9.5,"o":76.34},{"n":"Kottayam, Kerala, India","a":9.59,"o":76.52},{"n":"Idukki, Kerala, India","a":9.85,"o":76.97},{"n":"Kochi, Kerala, India","a":9.93,"o":76.27},{"n":"Ernakulam, Kerala, India","a":9.98,"o":76.28},{"n":"Thrissur, Kerala, India","a":10.53,"o":76.21},{"n":"Palakkad, Kerala, India","a":10.79,"o":76.65},{"n":"Malappuram, Kerala, India","a":11.05,"o":76.07},{"n":"Manjeri, Kerala, India","a":11.12,"o":76.12},{"n":"Tirur, Kerala, India","a":10.91,"o":75.92},{"n":"Perinthalmanna, Kerala, India","a":10.98,"o":76.23},{"n":"Kondotty, Kerala, India","a":11.15,"o":75.96},{"n":"Kozhikode, Kerala, India","a":11.26,"o":75.78},{"n":"Vadakara, Kerala, India","a":11.61,"o":75.59},{"n":"Wayanad, Kerala, India","a":11.69,"o":76.08},{"n":"Kannur, Kerala, India","a":11.87,"o":75.37},{"n":"Thalassery, Kerala, India","a":11.75,"o":75.49},{"n":"Kasaragod, Kerala, India","a":12.5,"o":74.99},{"n":"Mangaluru, Karnataka, India","a":12.91,"o":74.86},{"n":"Bengaluru, Karnataka, India","a":12.97,"o":77.59},{"n":"Mysuru, Karnataka, India","a":12.3,"o":76.64},{"n":"Chennai, Tamil Nadu, India","a":13.08,"o":80.27},{"n":"Coimbatore, Tamil Nadu, India","a":11.02,"o":76.96},{"n":"Madurai, Tamil Nadu, India","a":9.93,"o":78.12},{"n":"Hyderabad, Telangana, India","a":17.39,"o":78.49},{"n":"Mumbai, Maharashtra, India","a":19.08,"o":72.88},{"n":"Pune, Maharashtra, India","a":18.52,"o":73.86},{"n":"Goa, India","a":15.3,"o":74.12},{"n":"Delhi, India","a":28.61,"o":77.21},{"n":"Kolkata, West Bengal, India","a":22.57,"o":88.36},{"n":"Ahmedabad, Gujarat, India","a":23.02,"o":72.57},{"n":"Lakshadweep, India","a":10.57,"o":72.64},{"n":"Dubai, UAE","a":25.2,"o":55.27},{"n":"Abu Dhabi, UAE","a":24.45,"o":54.38},{"n":"Sharjah, UAE","a":25.35,"o":55.42},{"n":"Ajman, UAE","a":25.41,"o":55.51},{"n":"Ras Al Khaimah, UAE","a":25.8,"o":55.98},{"n":"Fujairah, UAE","a":25.13,"o":56.33},{"n":"Umm Al Quwain, UAE","a":25.56,"o":55.55},{"n":"Al Ain, UAE","a":24.21,"o":55.74},{"n":"Muscat, Oman","a":23.59,"o":58.41},{"n":"Salalah, Oman","a":17.02,"o":54.09},{"n":"Sohar, Oman","a":24.35,"o":56.71},{"n":"Doha, Qatar","a":25.29,"o":51.53},{"n":"Kuwait City, Kuwait","a":29.38,"o":47.99},{"n":"Manama, Bahrain","a":26.23,"o":50.59},{"n":"Riyadh, Saudi Arabia","a":24.71,"o":46.68},{"n":"Jeddah, Saudi Arabia","a":21.49,"o":39.19},{"n":"Makkah, Saudi Arabia","a":21.39,"o":39.86},{"n":"Madinah, Saudi Arabia","a":24.47,"o":39.61},{"n":"Dammam, Saudi Arabia","a":26.43,"o":50.1},{"n":"Jubail, Saudi Arabia","a":27.01,"o":49.66},{"n":"Singapore","a":1.35,"o":103.82},{"n":"Kuala Lumpur, Malaysia","a":3.14,"o":101.69},{"n":"Colombo, Sri Lanka","a":6.93,"o":79.86},{"n":"Male, Maldives","a":4.18,"o":73.51},{"n":"Karachi, Pakistan","a":24.86,"o":67.01},{"n":"Dhaka, Bangladesh","a":23.81,"o":90.41},{"n":"Istanbul, Turkey","a":41.01,"o":28.98},{"n":"Cairo, Egypt","a":30.04,"o":31.24},{"n":"Tokyo, Japan","a":35.68,"o":139.69},{"n":"Hong Kong","a":22.32,"o":114.17},{"n":"London, UK","a":51.51,"o":-0.13},{"n":"Birmingham, UK","a":52.49,"o":-1.89},{"n":"Manchester, UK","a":53.48,"o":-2.24},{"n":"Leicester, UK","a":52.64,"o":-1.13},{"n":"Dublin, Ireland","a":53.35,"o":-6.26},{"n":"Paris, France","a":48.86,"o":2.35},{"n":"Berlin, Germany","a":52.52,"o":13.4},{"n":"Amsterdam, Netherlands","a":52.37,"o":4.9},{"n":"New York, USA","a":40.71,"o":-74.01},{"n":"New Jersey, USA","a":40.06,"o":-74.41},{"n":"Chicago, USA","a":41.88,"o":-87.63},{"n":"Houston, USA","a":29.76,"o":-95.37},{"n":"Dallas, USA","a":32.78,"o":-96.8},{"n":"San Francisco, USA","a":37.77,"o":-122.42},{"n":"Los Angeles, USA","a":34.05,"o":-118.24},{"n":"Toronto, Canada","a":43.65,"o":-79.38},{"n":"Vancouver, Canada","a":49.28,"o":-123.12},{"n":"Calgary, Canada","a":51.05,"o":-114.07},{"n":"Sydney, Australia","a":-33.87,"o":151.21},{"n":"Melbourne, Australia","a":-37.81,"o":144.96},{"n":"Perth, Australia","a":-31.95,"o":115.86},{"n":"Brisbane, Australia","a":-27.47,"o":153.03},{"n":"Auckland, New Zealand","a":-36.85,"o":174.76},{"n":"Nairobi, Kenya","a":-1.29,"o":36.82},{"n":"Johannesburg, South Africa","a":-26.2,"o":28.05}];
+const photos = {}; // key -> base64 jpeg
+let spouseN = 0, childN = 0, pickKey = null;
+
+document.getElementById('places').innerHTML = PLACES.map(p => '<option value="' + p.n + '">').join('');
+
+function hashPrefill() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  const o = {};
+  for (const [k, v] of h) o[k] = v;
+  return o;
+}
+const pre = Object.assign({}, hashPrefill(), PREFILL || {});
+if (pre.family) document.getElementById('title').textContent = pre.family;
+if (pre.father) document.getElementById('father_name').value = pre.father;
+if (pre.mother) document.getElementById('mother_name').value = pre.mother;
+
+function el(html) { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
+
+function addSpouse() {
+  const i = ++spouseN;
+  document.getElementById('spouses').appendChild(el(`
+    <div class="item" id="sp${i}">
+      <label>Full name</label><input type="text" id="sp${i}_name" oninput="refreshParents()">
+      <div class="row">
+        <div><label>Date of birth</label><input type="date" id="sp${i}_birth"></div>
+        <div><label>Lives in</label><input type="text" id="sp${i}_place" list="places"></div>
+      </div>
+      <div class="row">
+        <div><label>Mobile</label><input type="text" id="sp${i}_phone" inputmode="tel"></div>
+        <div><label>Blood group</label><select id="sp${i}_blood"><option value="">Don't know</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
+      </div>
+      <div class="check"><input type="checkbox" id="sp${i}_passed"><span>Has passed away</span></div>
+      <div class="photo"><img id="sp${i}_img"><button class="btn photo-btn" type="button" onclick="pickPhoto('sp${i}')">Add photo</button></div>
+      <button class="btn rm" type="button" onclick="this.parentNode.remove();refreshParents()">Remove</button>
+    </div>`));
+  refreshParents();
+}
+
+function spouseOptions() {
+  const out = [];
+  for (let i = 1; i <= spouseN; i++) {
+    const n = document.getElementById(`sp${i}_name`);
+    if (n && n.value.trim()) out.push([i, n.value.trim()]);
+  }
+  return out;
+}
+
+function refreshParents() {
+  const opts = spouseOptions();
+  document.querySelectorAll('.otherparent').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = opts.map(([i, n]) => `<option value="${i}">${n}</option>`).join('') + '<option value="">Not listed</option>';
+    if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+    sel.parentNode.style.display = opts.length > 1 ? '' : 'none';
+  });
+}
+
+function addChild() {
+  const i = ++childN;
+  document.getElementById('children').appendChild(el(`
+    <div class="item" id="ch${i}">
+      <label>Child's full name</label><input type="text" id="ch${i}_name">
+      <div class="row">
+        <div><label>Son / Daughter</label><select id="ch${i}_gender"><option value="M">Son</option><option value="F">Daughter</option></select></div>
+        <div><label>Date of birth</label><input type="date" id="ch${i}_birth"></div>
+      </div>
+      <div style="display:none"><label>Other parent</label><select class="otherparent" id="ch${i}_other"></select></div>
+      <div class="check"><input type="checkbox" id="ch${i}_passed"><span>Has passed away</span></div>
+      <div class="photo"><img id="ch${i}_img"><button class="btn photo-btn" type="button" onclick="pickPhoto('ch${i}')">Add photo</button></div>
+      <button class="btn rm" type="button" onclick="this.parentNode.remove()">Remove</button>
+    </div>`));
+  refreshParents();
+}
+
+function pickPhoto(key) { pickKey = key; const f = document.getElementById('filepick'); f.value = ''; f.click(); }
+document.getElementById('filepick').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file || !pickKey) return;
+  const key = pickKey;
+  const img = new Image();
+  img.onload = () => {
+    const max = 400, sc = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const url = c.toDataURL('image/jpeg', 0.85);
+    photos[key] = url.split(',')[1];
+    const shown = document.getElementById(key + '_img'); shown.src = url; shown.style.display = 'block';
+    URL.revokeObjectURL(img.src);
+  };
+  img.src = URL.createObjectURL(file);
+});
+
+function val(id) { const e = document.getElementById(id); return e ? e.value.trim() : ''; }
+function checked(id) { const e = document.getElementById(id); return !!(e && e.checked); }
+function placeOf(name) {
+  const p = PLACES.find(x => x.n.toLowerCase() === name.toLowerCase());
+  return p ? { place: p.n, lat: p.a, lng: p.o } : { place: name || null, lat: null, lng: null };
+}
+
+function send() {
+  const me = val('me_name');
+  if (!me) { alert('Please write your full name.'); document.getElementById('me_name').focus(); return; }
+  const lines = [], links = [];
+  const person = (id, name, extra) => lines.push(Object.assign({ type: 'person', id, name, passedAway: 0, birthDate: null, deathDate: null, gender: null, sortOrder: id, place: null, lat: null, lng: null }, extra));
+  const myGender = val('me_gender') || null;
+  person(1, me, Object.assign({ gender: myGender, birthDate: val('me_birth') || null,
+      phone: val('me_phone') || null, bloodGroup: val('me_blood') || null }, placeOf(val('me_place')),
+    photos.me ? { photo: photos.me, photoExt: '.jpg' } : {}));
+  if (val('father_name')) { person(2, val('father_name'), { gender: 'M', passedAway: checked('father_passed') ? 1 : 0 }); links.push({ type: 'parent', parentId: 2, childId: 1 }); }
+  if (val('mother_name')) { person(3, val('mother_name'), { gender: 'F', passedAway: checked('mother_passed') ? 1 : 0 }); links.push({ type: 'parent', parentId: 3, childId: 1 }); }
+  if (val('father_name') && val('mother_name')) links.push({ type: 'spouse', personA: 2, personB: 3 });
+  const spouseIds = {};
+  for (let i = 1; i <= spouseN; i++) {
+    const n = val(`sp${i}_name`); if (!n) continue;
+    const id = 10 + i; spouseIds[i] = id;
+    person(id, n, Object.assign({
+      gender: myGender === 'M' ? 'F' : myGender === 'F' ? 'M' : null,
+      birthDate: val(`sp${i}_birth`) || null, passedAway: checked(`sp${i}_passed`) ? 1 : 0,
+      phone: val(`sp${i}_phone`) || null, bloodGroup: val(`sp${i}_blood`) || null },
+      placeOf(val(`sp${i}_place`)), photos[`sp${i}`] ? { photo: photos[`sp${i}`], photoExt: '.jpg' } : {}));
+    links.push({ type: 'spouse', personA: 1, personB: id });
+  }
+  const spList = Object.keys(spouseIds);
+  for (let i = 1; i <= childN; i++) {
+    const n = val(`ch${i}_name`); if (!n) continue;
+    const id = 100 + i;
+    person(id, n, Object.assign({ gender: val(`ch${i}_gender`) || null, birthDate: val(`ch${i}_birth`) || null,
+      passedAway: checked(`ch${i}_passed`) ? 1 : 0 }, placeOf(val('me_place')),
+      photos[`ch${i}`] ? { photo: photos[`ch${i}`], photoExt: '.jpg' } : {}));
+    links.push({ type: 'parent', parentId: 1, childId: id });
+    let other = spList.length === 1 ? spList[0] : val(`ch${i}_other`);
+    if (other && spouseIds[other]) links.push({ type: 'parent', parentId: spouseIds[other], childId: id });
+  }
+  const header = { type: 'header', app: 'FamilyTree', version: 1, update: true, created: new Date().toISOString(),
+    familyName: '', homePersonId: null, sender: me };
+  const text = [header, ...lines, ...links, { type: 'end' }].map(o => JSON.stringify(o)).join('\n') + '\n';
+  const fname = 'family_update_' + me.replace(/[^A-Za-z0-9]+/g, '_') + '.txt';
+  const file = new File([text], fname, { type: 'text/plain' });
+  document.getElementById('fname').textContent = fname;
+  const finish = () => { document.getElementById('form').style.display = 'none'; document.getElementById('sendbar').style.display = 'none'; document.getElementById('done').style.display = 'block'; window.scrollTo(0, 0); };
+  window._file = file; window._me = me;
+  finish();
+}
+
+function sendFile() {
+  const file = window._file;
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: 'Family details', text: 'Family details from ' + window._me }).catch(() => {});
+      return;
+    }
+  } catch (e) {}
+  try {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    document.getElementById('copynote').textContent = 'The file was saved to Downloads. Send it to the person who asked you on WhatsApp (tap the clip icon, Document).';
+  } catch (e) {
+    document.getElementById('copynote').textContent = 'This browser cannot make files. Please open the link in Chrome or Safari and try again.';
+  }
+}
+
+</script>
+</body>
+</html>

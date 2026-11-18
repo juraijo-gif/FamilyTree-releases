@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1f3b2d">
+<title>Family Viewer</title>
+<style>
+  :root { --bg:#f6f3ee; --card:#fff; --ink:#1d2320; --dim:#6b726e; --pri:#1f6b45; --pri2:#e8f3ec; --line:#e4e0d8; --gold:#c99a1b; --grey:#9a9a9a; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+  header { position:sticky; top:0; z-index:5; background:linear-gradient(135deg,#1f3b2d,#2f6b4c); color:#fff; padding:14px 16px 12px; padding-top:max(14px, env(safe-area-inset-top)); }
+  header h1 { margin:0; font:700 21px/1.2 Georgia,"Times New Roman",serif; letter-spacing:.3px; }
+  header .sub { opacity:.8; font-size:13px; margin-top:2px; }
+  main { padding:12px 12px 96px; max-width:760px; margin:0 auto; }
+  nav { position:fixed; left:0; right:0; bottom:0; z-index:6; display:flex; background:#fff; border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); }
+  nav button { flex:1; border:0; background:none; padding:9px 2px 8px; font-size:11.5px; color:var(--dim); display:flex; flex-direction:column; align-items:center; gap:3px; }
+  nav button .i { font-size:20px; line-height:1; }
+  nav button.on { color:var(--pri); font-weight:700; }
+  .card { background:var(--card); border-radius:16px; padding:14px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,.07); }
+  .h { font-weight:700; font-size:13px; color:var(--dim); text-transform:uppercase; letter-spacing:.6px; margin:2px 0 8px; }
+  .me { display:flex; gap:14px; align-items:center; }
+  .av { flex:none; width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:18px; overflow:hidden; background:#7c8a83; }
+  .av img { width:100%; height:100%; object-fit:cover; }
+  .av.big { width:84px; height:84px; font-size:26px; border:3px solid var(--gold); }
+  .av.sm { width:38px; height:38px; font-size:13px; }
+  .passed .av { filter:grayscale(1); opacity:.75; }
+  .passed .nm { color:var(--grey); }
+  .nm { font-weight:700; }
+  .big .nm, .me .nm { font-size:21px; }
+  .meta { color:var(--dim); font-size:14px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { display:flex; align-items:center; gap:8px; background:var(--pri2); border-radius:30px; padding:4px 12px 4px 4px; border:0; font:inherit; color:inherit; text-align:left; cursor:pointer; }
+  .chip.passed { background:#eee; }
+  .chip .w { font-size:12px; color:var(--dim); display:block; }
+  .row { display:flex; align-items:center; gap:12px; padding:9px 2px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .row:last-child { border-bottom:0; }
+  .row .t { flex:1; min-width:0; }
+  .row .t .meta { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  input[type=search], input[type=password], select { width:100%; font:inherit; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); }
+  .btn { display:inline-flex; align-items:center; gap:6px; border:0; border-radius:24px; padding:10px 16px; font:inherit; font-weight:700; background:var(--pri); color:#fff; text-decoration:none; cursor:pointer; }
+  .btn.light { background:var(--pri2); color:var(--pri); }
+  .btn.small { padding:6px 12px; font-size:14px; }
+  .acts { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .term { font:700 26px/1.2 Georgia,serif; color:var(--pri); margin:4px 0; }
+  .path { margin:8px 0 0; padding-left:20px; color:var(--ink); }
+  .path li { margin:3px 0; }
+  .note { font-size:13px; color:var(--dim); }
+  .pick { position:relative; margin-bottom:10px; }
+  .pick .sel { display:flex; align-items:center; gap:10px; padding:8px; border-radius:12px; background:var(--pri2); }
+  .drop { position:absolute; left:0; right:0; top:100%; background:#fff; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.18); z-index:4; max-height:300px; overflow:auto; }
+  .tree ul { list-style:none; margin:0; padding-left:18px; border-left:2px solid var(--line); }
+  .tree > ul { padding-left:0; border-left:0; }
+  .tree li { margin:6px 0; }
+  .tree .n { display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+  .tree .tg { width:26px; height:26px; border-radius:50%; border:1px solid var(--line); background:#fff; font-weight:700; color:var(--pri); flex:none; }
+  .tree .sp { color:var(--dim); font-size:14px; }
+  .lock { max-width:420px; margin:40px auto; text-align:center; }
+  .center { text-align:center; }
+  .empty { color:var(--dim); padding:10px 2px; }
+  .tag { display:inline-block; font-size:12px; padding:2px 8px; border-radius:10px; background:#fff3d6; color:#8a6400; margin-left:6px; }
+  .hide { display:none !important; }
+  .foot { text-align:center; color:var(--dim); font-size:12px; margin:18px 0 6px; }
+  /* Shown only when the page cannot run (e.g. an iPhone file preview). */
+  #nojs { max-width:560px; margin:20px auto; padding:18px; background:#fff; border-radius:16px; font-size:17px; }
+  #nojs h2 { font-family:Georgia,serif; margin-top:0; }
+</style>
+</head>
+<body>
+<div id="nojs">
+  <h2>🌳 Family Viewer</h2>
+  <p><b>This is a preview only.</b> To see the family and use the tools:</p>
+  <p><b>On Android:</b> open this file with <b>Chrome</b> (tap ⋮ → Open with → Chrome).</p>
+  <p><b>On iPhone:</b><br>
+  1. In WhatsApp, tap the file → <b>Share</b> → <b>Save to Files</b>.<br>
+  2. Open <b>Safari</b> and go to:<br><b>juraijo-gif.github.io/FamilyTree-releases/viewer/</b><br>
+  3. Tap <b>Open family file</b> and choose the saved file.</p>
+  <p style="color:#6b726e;font-size:14px">Everything stays on your phone – nothing is uploaded.</p>
+</div>
+
+<div id="app" class="hide">
+  <header><h1 id="fam">Family</h1><div class="sub" id="famsub"></div></header>
+  <main id="main"></main>
+  <nav id="nav" class="hide">
+    <button data-tab="family" class="on"><span class="i">🌳</span>Family</button>
+    <button data-tab="search"><span class="i">🔍</span>Search</button>
+    <button data-tab="relation"><span class="i">🔗</span>Relation</button>
+    <button data-tab="mahram"><span class="i">🛡️</span>Mahram</button>
+    <button data-tab="donors"><span class="i">🩸</span>Donors</button>
+  </nav>
+</div>
+
+<script id="family-data" type="application/json">/*__DATA__*/null</script>
+<script>
+(function () {
+'use strict';
+document.getElementById('nojs').classList.add('hide');
+document.getElementById('app').classList.remove('hide');
+var $ = function (s) { return document.querySelector(s); };
+var main = $('#main');
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+// ------------------------------------------------------------------ data
+var P = {}, parentsOf = {}, childrenOf = {}, spousesOf = {}, ids = [], famName = 'Family', made = '', milk = [], DIV = {};
+function isDiv(a, b) { return !!DIV[Math.min(a, b) + '-' + Math.max(a, b)]; }
+function load(d) {
+  famName = d.name || 'Family'; made = d.made || '';
+  (d.people || []).forEach(function (r) {
+    P[r[0]] = { id:r[0], name:r[1], g:r[2] || '', passed:!!r[3], birth:r[4] || '', death:r[5] || '', blood:r[6] || '', phone:r[7] || '', place:r[8] || '', photo:r[9] || '' };
+    ids.push(r[0]); parentsOf[r[0]] = []; childrenOf[r[0]] = []; spousesOf[r[0]] = [];
+  });
+  (d.parents || []).forEach(function (l) { if (P[l[0]] && P[l[1]]) { parentsOf[l[1]].push(l[0]); childrenOf[l[0]].push(l[1]); } });
+  (d.spouses || []).forEach(function (l) { if (P[l[0]] && P[l[1]]) { spousesOf[l[0]].push(l[1]); spousesOf[l[1]].push(l[0]); } });
+  milk = (d.milk || []).filter(function (m) { return P[m[0]] && P[m[1]]; });
+  (d.divorced || []).forEach(function (l) { DIV[Math.min(l[0], l[1]) + '-' + Math.max(l[0], l[1])] = 1; });
+  ids.sort(function (a, b) { return P[a].name.localeCompare(P[b].name); });
+}
+// Milk mothers and fathers count as extra parents of the fed child - for the
+// mahram rules only (never for inheritance or the family view).
+function withMilk(fn) {
+  var savedP = parentsOf, savedC = childrenOf, np = {}, nc = {};
+  ids.forEach(function (id) { np[id] = parentsOf[id].slice(); nc[id] = childrenOf[id].slice(); });
+  milk.forEach(function (m) {
+    var fathers = m[2] >= 0 && P[m[2]] ? [m[2]] : spousesOf[m[0]];
+    [m[0]].concat(fathers).forEach(function (p) { if (p != m[1] && np[m[1]].indexOf(p) < 0) { np[m[1]].push(p); nc[p].push(m[1]); } });
+  });
+  parentsOf = np; childrenOf = nc;
+  try { return fn(); } finally { parentsOf = savedP; childrenOf = savedC; }
+}
+function gendered(g, m, f, n) { return g === 'M' ? m : g === 'F' ? f : n; }
+function nameOf(id) { return P[id] ? P[id].name : '?'; }
+
+// ------------------------------------------------- relationship (same as the app)
+function shortestPath(a, b) {
+  var prev = {}, seen = {}; seen[a] = 1; var q = [a];
+  for (var qi = 0; qi < q.length; qi++) {
+    var n = q[qi]; if (n == b) break;
+    var go = function (m, step) { if (!seen[m]) { seen[m] = 1; prev[m] = [n, step]; q.push(m); } };
+    parentsOf[n].forEach(function (m) { go(m, 'up'); });
+    childrenOf[n].forEach(function (m) { go(m, 'down'); });
+    spousesOf[n].forEach(function (m) { go(m, 'sp'); });
+  }
+  if (!seen[b]) return null;
+  var edges = [], cur = b;
+  while (cur != a) { edges.push({ step:prev[cur][1], to:cur }); cur = prev[cur][0]; }
+  return edges.reverse();
+}
+function ancestorsDepth(start) {
+  var m = {}; m[start] = { d:0, prev:null }; var q = [start];
+  for (var i = 0; i < q.length; i++) { var n = q[i];
+    parentsOf[n].forEach(function (p) { if (!(p in m)) { m[p] = { d:m[n].d + 1, prev:n }; q.push(p); } }); }
+  return m;
+}
+function compress(edges) {
+  var out = [];
+  for (var i = 0; i < edges.length; i++) { var e = edges[i];
+    if (e.step === 'up' && i + 1 < edges.length && edges[i + 1].step === 'down') { out.push({ k:'sib', n:edges[i + 1].to }); i++; continue; }
+    out.push({ k:e.step === 'up' ? 'par' : e.step === 'down' ? 'chi' : 'sp', n:e.to }); }
+  return out;
+}
+function word(k, g) {
+  return k === 'par' ? gendered(g, 'father', 'mother', 'parent') : k === 'chi' ? gendered(g, 'son', 'daughter', 'child')
+    : k === 'sp' ? gendered(g, 'husband', 'wife', 'spouse') : gendered(g, 'brother', 'sister', 'sibling');
+}
+function great(n) { return n <= 0 ? '' : n === 1 ? 'great-' : n === 2 ? 'great-great-' : n + 'x great-'; }
+function ordinal(n) { var w = ['first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth']; return n >= 1 && n <= 10 ? w[n - 1] : n + 'th'; }
+function removed(n) { return n === 1 ? 'once removed' : n === 2 ? 'twice removed' : n + ' times removed'; }
+function isHalf(a, b) { var pa = parentsOf[a], pb = parentsOf[b]; var sh = pa.filter(function (x) { return pb.indexOf(x) >= 0; }).length; return pa.length === 2 && pb.length === 2 && sh === 1; }
+function bloodTerm(up, down, g, half) {
+  if (!up && !down) return 'same person';
+  if (!down) return up === 1 ? gendered(g, 'father', 'mother', 'parent') : great(up - 2) + gendered(g, 'grandfather', 'grandmother', 'grandparent');
+  if (!up) return down === 1 ? gendered(g, 'son', 'daughter', 'child') : great(down - 2) + gendered(g, 'grandson', 'granddaughter', 'grandchild');
+  if (up === 1 && down === 1) return (half ? 'half-' : '') + gendered(g, 'brother', 'sister', 'sibling');
+  if (down === 1) return great(up - 2) + gendered(g, 'uncle', 'aunt', 'uncle/aunt');
+  if (up === 1) return great(down - 2) + gendered(g, 'nephew', 'niece', 'nephew/niece');
+  var deg = Math.min(up, down) - 1, rem = Math.abs(up - down);
+  return ordinal(deg) + ' cousin' + (rem ? ' ' + removed(rem) : '');
+}
+function termOf(a, b, steps) {
+  var gb = P[b].g, s = steps.slice(), st = false, en = false;
+  if (s.length && s[0] === 'sp') { st = true; s = s.slice(1); }
+  if (s.length && s[s.length - 1] === 'sp') { en = true; s = s.slice(0, -1); }
+  var up = 0; while (up < s.length && s[up] === 'up') up++;
+  var down = 0; while (up + down < s.length && s[up + down] === 'down') down++;
+  if (up + down !== s.length) return null;
+  if (st && en) return null;
+  if (!st && !en) return bloodTerm(up, down, gb, up === 1 && down === 1 && isHalf(a, b));
+  if (!s.length) return isDiv(a, b) ? gendered(gb, 'former husband', 'former wife', 'former spouse') : gendered(gb, 'husband', 'wife', 'spouse');
+  if (st) {
+    if (up === 1 && !down) return gendered(gb, 'father-in-law', 'mother-in-law', 'parent-in-law');
+    if (up === 1 && down === 1) return gendered(gb, 'brother-in-law', 'sister-in-law', 'sibling-in-law');
+    if (!up && down === 1) return gendered(gb, 'stepson', 'stepdaughter', 'stepchild');
+    return bloodTerm(up, down, gb) + ' (by marriage)';
+  }
+  if (up === 1 && !down) return gendered(gb, 'stepfather', 'stepmother', 'step-parent');
+  if (up === 1 && down === 1) return gendered(gb, 'brother-in-law', 'sister-in-law', 'sibling-in-law');
+  if (!up && down === 1) return gendered(gb, 'son-in-law', 'daughter-in-law', 'child-in-law');
+  if (up >= 2 && down === 1) return great(up - 2) + gendered(gb, 'uncle', 'aunt', 'uncle/aunt') + ' (by marriage)';
+  return bloodTerm(up, down, null) + "'s " + gendered(gb, 'husband', 'wife', 'spouse');
+}
+function makeRoute(a, edges, through) {
+  var b = edges[edges.length - 1].to, toks = compress(edges);
+  var chain = toks.map(function (t) { return word(t.k, P[t.n].g); }).join("'s ");
+  var term = termOf(a, b, edges.map(function (e) { return e.step; }));
+  return { chain:chain, term:(term && term !== chain) ? term : null, through:through,
+    path:[nameOf(a)].concat(toks.map(function (t) { return word(t.k, P[t.n].g) + ': ' + nameOf(t.n); })) };
+}
+function bloodLines(a, b) {
+  var A = ancestorsDepth(a), B = ancestorsDepth(b);
+  var common = Object.keys(A).filter(function (k) { return k in B; }).map(Number);
+  if (!common.length) return [];
+  var cs = {}; common.forEach(function (c) { cs[c] = 1; });
+  var lowest = common.filter(function (c) { return !childrenOf[c].some(function (x) { return cs[x]; }); });
+  lowest.sort(function (x, y) { return (A[x].d + B[x].d) - (A[y].d + B[y].d); });
+  var used = {}, routes = [];
+  lowest.forEach(function (c) {
+    if (used[c] || routes.length >= 12) return; used[c] = 1;
+    var partner = spousesOf[c].filter(function (s) { return lowest.indexOf(s) >= 0 && !used[s] && A[s].d === A[c].d && B[s].d === B[c].d; })[0];
+    if (partner != null) used[partner] = 1;
+    var upNodes = [], cur = c; while (cur != null && cur != a) { upNodes.push(cur); cur = A[cur].prev; }
+    var edges = upNodes.reverse().map(function (n) { return { step:'up', to:n }; });
+    cur = B[c].prev; while (cur != null) { edges.push({ step:'down', to:cur }); if (cur == b) break; cur = B[cur].prev; }
+    if (!edges.length) return;
+    var through = (c != a && c != b) ? 'through ' + nameOf(c) + (partner != null ? ' and ' + nameOf(partner) : '') : null;
+    routes.push(makeRoute(a, edges, through));
+  });
+  return routes;
+}
+function relationWord(a, b) { var e = shortestPath(a, b); if (!e || !e.length) return ''; var r = makeRoute(a, e, null); return r.term || r.chain; }
+
+// ------------------------------------------------------ mahram (same as the app)
+function walk(start, next) { var out = {}, q = [start]; for (var i = 0; i < q.length; i++) next(q[i]).forEach(function (m) { if (m != start && !out[m]) { out[m] = 1; q.push(m); } }); return out; }
+function anc(id) { return walk(id, function (n) { return parentsOf[n]; }); }
+function desc(id) { return walk(id, function (n) { return childrenOf[n]; }); }
+function sibs(id) { var o = {}; parentsOf[id].forEach(function (p) { childrenOf[p].forEach(function (c) { if (c != id) o[c] = 1; }); }); return o; }
+function keys(o) { return Object.keys(o).map(Number); }
+function findMahrams(x) {
+  var me = P[x], A = anc(x), D = desc(x), S = sibs(x), blood = {};
+  [A, D, S].forEach(function (o) { keys(o).forEach(function (k) { blood[k] = 1; }); });
+  keys(S).forEach(function (s) { keys(desc(s)).forEach(function (k) { blood[k] = 1; }); });
+  keys(A).forEach(function (a) { keys(sibs(a)).forEach(function (k) { if (!A[k]) blood[k] = 1; }); });
+  var marriage = {}, stepOnly = {};
+  spousesOf[x].forEach(function (s) {
+    keys(anc(s)).forEach(function (k) { marriage[k] = 1; });
+    keys(desc(s)).forEach(function (k) { if (!D[k]) { marriage[k] = 1; stepOnly[k] = 1; } });
+  });
+  keys(A).forEach(function (a) { spousesOf[a].forEach(function (k) { if (!A[k]) marriage[k] = 1; }); });
+  keys(D).forEach(function (d) { spousesOf[d].forEach(function (k) { marriage[k] = 1; }); });
+  delete blood[x];
+  var sp = {}; spousesOf[x].forEach(function (s) { sp[s] = 1; });
+  keys(blood).forEach(function (k) { delete marriage[k]; }); keys(sp).forEach(function (k) { delete marriage[k]; }); delete marriage[x];
+  var skipped = 0;
+  function keep(id) { var p = P[id]; if (!me.g) return true; if (!p.g) { skipped++; return false; } return p.g !== me.g; }
+  var byName = function (a, b) { return P[a].name.localeCompare(P[b].name); };
+  return { birth:keys(blood).filter(keep).sort(byName), marriage:keys(marriage).filter(keep).sort(byName), stepOnly:stepOnly, spouses:spousesOf[x].filter(function (s) { return !isDiv(x, s); }), skipped:skipped };
+}
+function findMahramsAll(x) {
+  var r = findMahrams(x);
+  r.feeding = [];
+  if (!milk.length) return r;
+  var had = {}; r.birth.concat(r.marriage, r.spouses).forEach(function (k) { had[k] = 1; });
+  withMilk(function () {
+    var m = findMahrams(x);
+    m.birth.concat(m.marriage).forEach(function (k) {
+      if (!had[k]) r.feeding.push({ id:k, word:relationWord(x, k) + ' (through feeding)', step:m.stepOnly[k] });
+    });
+  });
+  r.feeding.sort(function (a, b) { return P[a.id].name.localeCompare(P[b.id].name); });
+  return r;
+}
+
+// ------------------------------------------------------------------ UI bits
+var COLS = ['#7C4DFF','#26A69A','#EF6C00','#EC407A','#42A5F5','#8D6E63','#66BB6A','#AB47BC'];
+function initials(n) { var p = n.trim().split(/\s+/); return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); }
+function av(id, cls) {
+  var p = P[id];
+  if (p.photo) return '<div class="av ' + (cls || '') + '"><img src="' + p.photo + '" alt=""></div>';
+  return '<div class="av ' + (cls || '') + '" style="background:' + COLS[id % COLS.length] + '">' + esc(initials(p.name)) + '</div>';
+}
+function years(p) {
+  var b = p.birth ? p.birth.slice(0, 4) : '', d = p.death ? p.death.slice(0, 4) : '';
+  if (b && d) return b + ' – ' + d; if (b) return 'Born ' + b + (p.passed ? ' · passed away' : ''); if (d) return 'Died ' + d;
+  return p.passed ? 'Passed away' : '';
+}
+function chip(id, w) {
+  return '<button class="chip' + (P[id].passed ? ' passed' : '') + '" data-go="' + id + '">' + av(id, 'sm') +
+    '<span><span class="nm">' + esc(P[id].name) + '</span>' + (w ? '<span class="w">' + esc(w) + '</span>' : '') + '</span></button>';
+}
+function rowHtml(id, sub, extra) {
+  return '<div class="row' + (P[id].passed ? ' passed' : '') + '" data-go="' + id + '">' + av(id, 'sm') +
+    '<div class="t"><div class="nm">' + esc(P[id].name) + '</div>' + (sub ? '<div class="meta">' + esc(sub) + '</div>' : '') + '</div>' + (extra || '') + '</div>';
+}
+function childOfText(id) {
+  var ps = parentsOf[id]; if (!ps.length) return years(P[id]);
+  return gendered(P[id].g, 'Son', 'Daughter', 'Child') + ' of ' + ps.map(nameOf).join(' & ');
+}
+function phoneActs(p) {
+  if (!p.phone) return '';
+  var n = p.phone.replace(/[^\d+]/g, ''), wa = n.replace(/^\+/, '');
+  return '<div class="acts"><a class="btn small" href="tel:' + esc(n) + '">📞 Call</a><a class="btn small light" href="https://wa.me/' + esc(wa) + '">💬 WhatsApp</a></div>';
+}
+
+// ------------------------------------------------------------------- tabs
+var tab = 'family', focus = null, hist = [];
+function founder() {
+  var best = null, bestN = -1;
+  ids.forEach(function (id) { if (parentsOf[id].length) return; var n = keys(desc(id)).length; if (n > bestN) { bestN = n; best = id; } });
+  return best == null ? ids[0] : best;
+}
+function show(t) {
+  tab = t;
+  document.querySelectorAll('nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === t); });
+  ({ family:renderFamily, search:renderSearch, relation:renderRelation, mahram:renderMahram, donors:renderDonors })[t]();
+  window.scrollTo(0, 0);
+}
+function go(id) { if (focus != null && focus != id) hist.push(focus); focus = id; show('family'); }
+
+function renderFamily() {
+  if (focus == null) focus = founder();
+  var p = P[focus], id = focus;
+  var info = [years(p), p.place, p.blood ? 'Blood group ' + p.blood : ''].filter(Boolean).join(' · ');
+  var h = '<div class="card' + (p.passed ? ' passed' : '') + '">' +
+    (hist.length ? '<button class="btn small light" id="back" style="margin-bottom:10px">← Back</button>' : '') +
+    '<div class="me">' + av(id, 'big') + '<div><div class="nm">' + esc(p.name) + '</div><div class="meta">' + esc(info) + '</div></div></div>' +
+    phoneActs(p) + '</div>';
+  function section(title, list, wordFn) {
+    if (!list.length) return '';
+    return '<div class="card"><div class="h">' + title + '</div><div class="chips">' + list.map(function (x) { return chip(x, wordFn ? wordFn(x) : ''); }).join('') + '</div></div>';
+  }
+  h += section('Parents', parentsOf[id], function (x) { return gendered(P[x].g, 'Father', 'Mother', 'Parent'); });
+  h += section(gendered(p.g, 'Wife', 'Husband', 'Husband / wife') + (spousesOf[id].length > 1 ? 's' : ''), spousesOf[id], function (x) { return isDiv(id, x) ? 'divorced' : ''; });
+  h += section('Children', childrenOf[id], function (x) { var o = parentsOf[x].filter(function (q) { return q != id; }); return o.length ? 'with ' + o.map(nameOf).join(', ') : ''; });
+  h += section('Brothers & sisters', keys(sibs(id)));
+  if (childrenOf[id].length) h += '<div class="card"><div class="h">Family below ' + esc(p.name) + '</div><div class="tree" id="tree"></div></div>';
+  main.innerHTML = h;
+  if (childrenOf[id].length) $('#tree').innerHTML = '<ul>' + branch(id, 0) + '</ul>';
+}
+function branch(id, depth) {
+  return childrenOf[id].map(function (c) {
+    var kids = childrenOf[c].length, open = depth < 1;
+    var cur = spousesOf[c].filter(function (s) { return !isDiv(c, s); });
+    var sp = cur.length ? ' <span class="sp">♥ ' + cur.map(nameOf).map(esc).join(', ') + '</span>' : '';
+    return '<li><span class="n' + (P[c].passed ? ' passed' : '') + '">' + (kids ? '<button class="tg" data-tg="' + c + '">' + (open ? '−' : '+') + '</button>' : '<span style="width:26px"></span>') +
+      '<span data-go="' + c + '"><span class="nm">' + esc(P[c].name) + '</span>' + sp + '</span></span>' +
+      (kids ? '<ul data-kids="' + c + '"' + (open ? '' : ' class="hide"') + '>' + (open ? branch(c, depth + 1) : '') + '</ul>' : '') + '</li>';
+  }).join('');
+}
+
+function matches(q, limit) {
+  q = q.trim().toLowerCase(); if (!q) return [];
+  var out = []; for (var i = 0; i < ids.length && out.length < (limit || 60); i++) if (P[ids[i]].name.toLowerCase().indexOf(q) >= 0) out.push(ids[i]);
+  return out;
+}
+function renderSearch() {
+  main.innerHTML = '<div class="card"><input type="search" id="q" placeholder="Search ' + ids.length + ' people…" autocomplete="off"></div><div class="card" id="res"><div class="empty">Type a name.</div></div>';
+  var q = $('#q'); q.focus();
+  q.oninput = function () {
+    var m = matches(q.value, 80);
+    $('#res').innerHTML = m.length ? m.map(function (id) { return rowHtml(id, childOfText(id)); }).join('') : '<div class="empty">' + (q.value.trim() ? 'Nobody found.' : 'Type a name.') + '</div>';
+  };
+}
+
+// person picker: returns html; state kept in pickers[key]
+var pickers = {};
+function pickerHtml(key, label) {
+  var id = pickers[key];
+  if (id != null) return '<div class="pick"><div class="h">' + label + '</div><div class="sel">' + av(id, 'sm') + '<div style="flex:1" class="nm">' + esc(P[id].name) + '</div><button class="btn small light" data-clear="' + key + '">Change</button></div></div>';
+  return '<div class="pick"><div class="h">' + label + '</div><input type="search" data-pick="' + key + '" placeholder="Type a name…" autocomplete="off"><div class="drop hide" data-drop="' + key + '"></div></div>';
+}
+function wirePickers(rerender) {
+  document.querySelectorAll('[data-pick]').forEach(function (inp) {
+    var key = inp.dataset.pick, drop = document.querySelector('[data-drop="' + key + '"]');
+    inp.oninput = function () {
+      var m = matches(inp.value, 30);
+      drop.innerHTML = m.map(function (id) { return rowHtml(id, childOfText(id)).replace('data-go=', 'data-choose="' + key + '" data-id='); }).join('');
+      drop.classList.toggle('hide', !m.length);
+    };
+  });
+  document.querySelectorAll('[data-choose]').forEach(function () {});
+  main.onclick = function (e) {
+    var c = e.target.closest('[data-choose]');
+    if (c) { pickers[c.dataset.choose] = +c.dataset.id; rerender(); return; }
+    var cl = e.target.closest('[data-clear]');
+    if (cl) { delete pickers[cl.dataset.clear]; rerender(); return; }
+    var g = e.target.closest('[data-go]'); if (g) go(+g.dataset.go);
+  };
+}
+
+function renderRelation() {
+  var a = pickers.ra, b = pickers.rb, h = '<div class="card">' + pickerHtml('ra', 'From') + pickerHtml('rb', 'To') + '</div>';
+  if (a != null && b != null) {
+    if (a == b) h += '<div class="card">Same person.</div>';
+    else {
+      var e = shortestPath(a, b), lines = bloodLines(a, b);
+      if (!e && !lines.length) h += '<div class="card">No connection found in the family links.</div>';
+      if (e) { var r = makeRoute(a, e, null);
+        h += '<div class="card"><div class="meta">' + esc(P[b].name) + ' is ' + esc(P[a].name) + '\'s</div><div class="term">' + esc(r.term || r.chain) + '</div>' +
+          (r.term ? '<div class="meta">' + esc(r.chain) + '</div>' : '') + '<ol class="path">' + r.path.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol></div>'; }
+      if (lines.length > 1 || (lines.length === 1 && e && lines[0].chain !== makeRoute(a, e, null).chain)) {
+        h += '<div class="card"><div class="h">All blood lines (' + lines.length + ')</div>' + lines.map(function (r) {
+          return '<div style="margin:8px 0"><b>' + esc(r.term || r.chain) + '</b>' + (r.through ? ' <span class="meta">' + esc(r.through) + '</span>' : '') + '<div class="meta">' + esc(r.path.join(' → ')) + '</div></div>';
+        }).join('') + '</div>';
+      }
+    }
+  } else h += '<div class="card note">Choose two people to see how they are related – every route is shown, including through cousin marriages.</div>';
+  main.innerHTML = h; wirePickers(renderRelation);
+}
+
+function renderMahram() {
+  var x = pickers.mx, h = '<div class="card">' + pickerHtml('mx', 'Person') + '</div>';
+  if (x != null) {
+    var r = findMahramsAll(x);
+    var list = function (ids2, note) { return ids2.length ? ids2.map(function (id) { return rowHtml(id, relationWord(x, id) + (note && note[id] ? ' – only if the marriage was consummated' : '')); }).join('') : '<div class="empty">None found in the family links.</div>'; };
+    if (!P[x].g) h += '<div class="card note">Gender of ' + esc(P[x].name) + ' is not set, so everyone is listed.</div>';
+    h += '<div class="card"><div class="h">Mahram by birth (' + r.birth.length + ')</div>' + list(r.birth) + '</div>';
+    h += '<div class="card"><div class="h">Mahram by marriage (' + r.marriage.length + ')</div>' + list(r.marriage, r.stepOnly) + '</div>';
+    h += '<div class="card"><div class="h">Mahram through feeding (' + r.feeding.length + ')</div>' + (r.feeding.length ? r.feeding.map(function (f) { return rowHtml(f.id, f.word + (f.step ? ' – only if the marriage was consummated' : '')); }).join('') : '<div class="empty">None recorded.</div>') + '</div>';
+    if (r.spouses.length) h += '<div class="card"><div class="h">Husband / wife</div>' + r.spouses.map(function (id) { return rowHtml(id, ''); }).join('') + '</div>';
+    if (r.skipped) h += '<div class="card note">' + r.skipped + ' relative(s) left out because their gender is not set.</div>';
+    h += '<div class="card note">Worked out from the family links, including recorded milk relations (rada\'ah). Milk kinship makes marriage forbidden but gives no inheritance. For religious rulings, please ask a scholar.</div>';
+  } else h += '<div class="card note">Choose a person to see who is mahram to them.</div>';
+  main.innerHTML = h; wirePickers(renderMahram);
+}
+
+var donorGroup = '';
+function renderDonors() {
+  var groups = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
+  var h = '<div class="card"><div class="h">Blood group</div><select id="bg"><option value="">Choose…</option>' + groups.map(function (g) { return '<option' + (g === donorGroup ? ' selected' : '') + '>' + g + '</option>'; }).join('') + '</select></div>';
+  if (donorGroup) {
+    var list = ids.filter(function (id) { return P[id].blood === donorGroup && !P[id].passed; });
+    h += '<div class="card"><div class="h">' + donorGroup + ' in the family (' + list.length + ')</div>' + (list.length ? list.map(function (id) {
+      var p = P[id]; return rowHtml(id, (p.place || '') + (p.phone ? (p.place ? ' · ' : '') + p.phone : ''), p.phone ? '<a class="btn small" href="tel:' + esc(p.phone.replace(/[^\d+]/g, '')) + '" onclick="event.stopPropagation()">📞</a>' : '');
+    }).join('') : '<div class="empty">Nobody with this group yet.</div>') + '</div>';
+  }
+  main.innerHTML = h;
+  $('#bg').onchange = function () { donorGroup = this.value; renderDonors(); };
+}
+
+main.addEventListener('click', function (e) {
+  if (tab === 'relation' || tab === 'mahram') return; // pickers handle clicks
+  var t = e.target.closest('[data-tg]');
+  if (t) { var id = +t.dataset.tg, ul = document.querySelector('[data-kids="' + id + '"]');
+    if (ul.classList.contains('hide') && !ul.innerHTML) ul.innerHTML = branch(id, 9);
+    ul.classList.toggle('hide'); t.textContent = ul.classList.contains('hide') ? '+' : '−'; return; }
+  if (e.target.closest('#back')) { focus = hist.pop(); show('family'); return; }
+  var g = e.target.closest('[data-go]'); if (g) go(+g.dataset.go);
+});
+document.querySelectorAll('nav button').forEach(function (b) { b.onclick = function () { main.onclick = null; show(b.dataset.tab); }; });
+
+// ------------------------------------------------------------ start up
+function start(d) {
+  load(d);
+  $('#fam').textContent = famName;
+  $('#famsub').textContent = ids.length + ' members' + (made ? ' · updated ' + made : '');
+  document.title = famName + ' – Family Viewer';
+  $('#nav').classList.remove('hide');
+  show('family');
+  main.insertAdjacentHTML('beforeend', '');
+  document.body.insertAdjacentHTML('beforeend', '');
+}
+function b64(s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+function unlock(locked, pass) {
+  if (!window.crypto || !crypto.subtle) return Promise.reject(new Error('This browser cannot open locked files. Please open it in Chrome or Safari.'));
+  var enc = new TextEncoder();
+  return crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']).then(function (k) {
+    return crypto.subtle.deriveKey({ name:'PBKDF2', salt:b64(locked.salt), iterations:locked.iter, hash:'SHA-256' }, k, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+  }).then(function (key) {
+    return crypto.subtle.decrypt({ name:'AES-GCM', iv:b64(locked.iv) }, key, b64(locked.data));
+  }).then(function (buf) {
+    if (locked.packed) return inflate(new Uint8Array(buf)).then(function (t) { var d = JSON.parse(t); try { localStorage.setItem('family-viewer', t); } catch (e) {} return d; });
+    return JSON.parse(new TextDecoder().decode(buf));
+  });
+}
+function askPassword(locked) {
+  main.innerHTML = '<div class="lock card"><div style="font-size:44px">🔒</div><h2 style="font-family:Georgia,serif">' + esc(locked.name || 'Family') + '</h2>' +
+    '<p class="note">This family file is locked. Enter the family password.</p><input type="password" id="pw" placeholder="Password"><p><button class="btn" id="ok">Open</button></p><p class="note" id="err"></p></div>';
+  $('#fam').textContent = locked.name || 'Family';
+  var tryIt = function () { $('#err').textContent = 'Opening…';
+    unlock(locked, $('#pw').value).then(start, function (e) { $('#err').textContent = e && e.message && e.message.indexOf('browser') >= 0 ? e.message : 'Wrong password. Please try again.'; }); };
+  $('#ok').onclick = tryIt; $('#pw').onkeydown = function (e) { if (e.key === 'Enter') tryIt(); };
+}
+function begin(d) { if (d && d.locked) askPassword(d); else if (d) start(d); }
+// Picker page (iPhone): open a family file someone sent you.
+function askFile() {
+  $('#fam').textContent = 'Family Viewer';
+  main.innerHTML = '<div class="lock card"><div style="font-size:48px">🌳</div><h2 style="font-family:Georgia,serif">Open your family file</h2>' +
+    '<p class="note">Choose the Family Viewer file you received (save it from WhatsApp to <b>Files</b> first).</p>' +
+    '<label class="btn" style="margin-top:6px">📂 Open family file<input type="file" id="f" accept=".html,.htm,text/html" class="hide"></label>' +
+    '<p class="note">Nothing is uploaded – it opens only on this phone.</p><p class="note" id="err"></p></div>';
+  $('#f').onchange = function () {
+    var file = this.files[0]; if (!file) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      var m = /<script id="family-data" type="application\/json">([\s\S]*?)<\/script>/.exec(rd.result);
+      try { var d = JSON.parse(m[1]); if (!d) throw 0; try { localStorage.setItem('family-viewer', m[1]); } catch (e) {} begin(d); }
+      catch (e) { $('#err').textContent = 'This is not a Family Viewer file.'; }
+    };
+    rd.readAsText(file);
+  };
+}
+var data = null;
+try { data = JSON.parse(document.getElementById('family-data').textContent.replace('/*__DATA__*/', '')); } catch (e) {}
+var hosted = !data; // the web page version (no family inside the file)
+
+// A family sent as a link: the data is in the part after '#', which the
+// browser never sends to any server.
+function b64url(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return b64(s); }
+function inflate(bytes) {
+  if (typeof DecompressionStream === 'undefined') return Promise.reject(new Error('old'));
+  var ds = new DecompressionStream('deflate-raw');
+  var stream = new Blob([bytes]).stream().pipeThrough(ds);
+  return new Response(stream).text();
+}
+function fromLink() {
+  var h = location.hash || '';
+  var m = /^#([dk])=(.+)$/.exec(h);
+  if (!m) return false;
+  var fail = function (e) {
+    main.innerHTML = '<div class="lock card"><h2>Could not open this family link</h2><p class="note">' +
+      (e && e.message === 'old' ? 'Please update your phone (iOS 16.4 or newer) or open the link in Chrome.' : 'The link may be cut short. Ask for it to be sent again, or ask for the Family Viewer file.') + '</p></div>';
+  };
+  var keep = function (d) { try { localStorage.setItem('family-viewer', JSON.stringify(d)); } catch (e) {} history.replaceState(null, '', location.pathname); begin(d); };
+  if (m[1] === 'd') {
+    inflate(b64url(m[2])).then(function (t) { keep(JSON.parse(t)); }, fail);
+  } else {
+    var parts = m[2].split('.');
+    var locked = { locked:true, name:decodeURIComponent(parts[3] || 'Family'), iter:+parts[0], salt:parts[1].replace(/-/g,'+').replace(/_/g,'/'), iv:parts[2].replace(/-/g,'+').replace(/_/g,'/'), data:parts[4].replace(/-/g,'+').replace(/_/g,'/'), packed:true };
+    while (locked.salt.length % 4) locked.salt += '='; while (locked.iv.length % 4) locked.iv += '='; while (locked.data.length % 4) locked.data += '=';
+    history.replaceState(null, '', location.pathname);
+    askPassword(locked);
+  }
+  return true;
+}
+if (fromLink()) {
+  // opened from a link
+} else {
+  if (!data) { try { data = JSON.parse(localStorage.getItem('family-viewer') || 'null'); } catch (e) {} }
+  if (data) begin(data); else askFile();
+}
+document.body.insertAdjacentHTML('beforeend', '<div class="foot" style="padding-bottom:90px">' +
+  (hosted ? '<p><a href="#" id="other" style="color:#1f6b45">Open a different family file</a></p>' : '') +
+  'Family Viewer · Concept by MUHAMMED YASEEN · Created by MUHAMMED JURAIJ</div>');
+var other = document.getElementById('other');
+if (other) other.onclick = function (e) { e.preventDefault(); try { localStorage.removeItem('family-viewer'); } catch (x) {} location.reload(); };
+})();
+</script>
+</body>
+</html>
